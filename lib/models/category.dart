@@ -10,9 +10,4 @@ class Category {
     this.name,
     this.foodList,
   });
-
-  @override
-  String toString() {
-    return '{id: ${id}, name: ${name},foodList: ${foodList}}';
-  }
 }

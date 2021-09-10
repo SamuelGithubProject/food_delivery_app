@@ -1,21 +1,82 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:food_delivery_app/adminpage.dart';
 import 'package:food_delivery_app/color_constants.dart';
 import 'package:food_delivery_app/details_page.dart';
 import 'package:food_delivery_app/signup.dart';
+import 'package:http/http.dart' as http;
 
+// ignore: must_be_immutable
 class LoginPage extends StatelessWidget {
-  final usernameLogin = TextEditingController();
-  final passwordLogin = TextEditingController();
+  TextEditingController usernameLogin = TextEditingController();
+  TextEditingController passwordLogin = TextEditingController();
+
+  bool isEmail(String string) {
+    // Null or empty string is invalid
+    if (string == null || string.isEmpty) {
+      return false;
+    }
+
+    const pattern = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
+    final regExp = RegExp(pattern);
+
+    if (!regExp.hasMatch(string)) {
+      return false;
+    }
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
-    void loginFun() {
-      if (usernameLogin.text == "user" && passwordLogin.text == "user") {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => DetailsPage(),
-          ),
-        );
+    void login() async {
+      if (isEmail(usernameLogin.text)) {
+        var url = Uri.parse(
+            'https://apinurmaya.adriel-creation.tech/configAPI/user.php');
+        var response = await http.post(url, body: {
+          'task': 'LoginUser',
+          'email': usernameLogin.text,
+          'password': passwordLogin.text,
+        });
+        if (response.statusCode == 200) {
+          if (response.body == "Gagal") {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Username atau Password Salah"),
+            ));
+          } else {
+            var data = response.body;
+            var user = json.decode(data);
+
+            if (user[0]['email'] == "admin@gmail.com" &&
+                user[0]['password'] ==
+                    md5.convert(utf8.encode("admin")).toString()) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (BuildContext context) => AdminPage(),
+                ),
+              );
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (BuildContext context) => DetailsPage(
+                    idUser: user[0]['id_user'],
+                    namaUser: user[0]['nama_lengkap'],
+                  ),
+                ),
+              );
+            }
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Error : ${response.statusCode}"),
+          ));
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Email Invalid"),
+        ));
       }
     }
 
@@ -94,7 +155,7 @@ class LoginPage extends StatelessWidget {
                     child: MaterialButton(
                       minWidth: double.infinity,
                       height: 60,
-                      onPressed: () => {loginFun()},
+                      onPressed: () => {login()},
                       color: ColorConstants.primaryColor,
                       elevation: 0,
                       shape: RoundedRectangleBorder(

@@ -1,8 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_app/color_constants.dart';
 import 'package:food_delivery_app/login.dart';
+import 'package:food_delivery_app/loginandreg.dart';
+import 'package:http/http.dart' as http;
 
-class SignupPage extends StatelessWidget {
+class SignupPage extends StatefulWidget {
+  const SignupPage({Key key}) : super(key: key);
+
+  @override
+  _SignupPageState createState() => _SignupPageState();
+}
+
+class _SignupPageState extends State<SignupPage> {
+  TextEditingController emailController = new TextEditingController();
+  TextEditingController passwordController = new TextEditingController();
+  TextEditingController confirmPasswordController = new TextEditingController();
+  TextEditingController namaLengkapController = new TextEditingController();
+  TextEditingController nomorHandphoneController = new TextEditingController();
+  TextEditingController alamatLengkapController = new TextEditingController();
+
+  bool isEmail(String string) {
+    // Null or empty string is invalid
+    if (string == null || string.isEmpty) {
+      return false;
+    }
+
+    const pattern = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
+    final regExp = RegExp(pattern);
+
+    if (!regExp.hasMatch(string)) {
+      return false;
+    }
+    return true;
+  }
+
+  void addData() async {
+    if (isEmail(emailController.text)) {
+      if (passwordController.text == confirmPasswordController.text) {
+        var url = Uri.parse(
+            'https://apinurmaya.adriel-creation.tech/configAPI/user.php');
+        var response = await http.post(url, body: {
+          'task': 'tambahDataUser',
+          'email': emailController.text,
+          'password': passwordController.text,
+          'namalengkap': namaLengkapController.text,
+          'nomorhp': nomorHandphoneController.text,
+          'alamatlengkap': alamatLengkapController.text,
+        });
+        if (response.statusCode == 200) {
+          if (response.body == "Success") {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => Loginandregister(),
+              ),
+            );
+          } else {
+            print('Response body: ${response.body}');
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(response.body),
+          ));
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Password tidak sama"),
+        ));
+      }
+    } else {
+      if (passwordController.text == confirmPasswordController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Password tidak sama"),
+        ));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Email invalid dan Password tidak sama"),
+        ));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,11 +136,21 @@ class SignupPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    inputFile(label: "Email"),
-                    inputFile(label: "Password", obscureText: true),
-                    inputFile(label: "Confirm Password ", obscureText: true),
-                    inputFile(label: "Nama Lengkap"),
-                    inputFile(label: "Nomor Handphone/WA"),
+                    inputFile(label: "Email", controller: emailController),
+                    inputFile(
+                        label: "Password",
+                        obscureText: true,
+                        controller: passwordController),
+                    inputFile(
+                        label: "Confirm Password ",
+                        obscureText: true,
+                        controller: confirmPasswordController),
+                    inputFile(
+                        label: "Nama Lengkap",
+                        controller: namaLengkapController),
+                    inputFile(
+                        label: "Nomor Handphone/WA",
+                        controller: nomorHandphoneController),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: Text(
@@ -73,6 +161,7 @@ class SignupPage extends StatelessWidget {
                       ),
                     ),
                     TextField(
+                      controller: alamatLengkapController,
                       keyboardType: TextInputType.multiline,
                       maxLines: 3,
                       decoration: InputDecoration(
@@ -98,7 +187,9 @@ class SignupPage extends StatelessWidget {
                 child: MaterialButton(
                   minWidth: double.infinity,
                   height: 60,
-                  onPressed: () {},
+                  onPressed: () {
+                    addData();
+                  },
                   color: ColorConstants.primaryColor,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -139,34 +230,34 @@ class SignupPage extends StatelessWidget {
       ),
     );
   }
-}
 
-// we will be creating a widget for text field
-Widget inputFile({label, obscureText = false}) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[
-      Text(
-        label,
-        style: TextStyle(
-            fontSize: 15, fontWeight: FontWeight.w400, color: Colors.black87),
-      ),
-      SizedBox(
-        height: 5,
-      ),
-      TextField(
-        obscureText: obscureText,
-        decoration: InputDecoration(
-            contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey[400]),
-            ),
-            border: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey[400]))),
-      ),
-      SizedBox(
-        height: 10,
-      )
-    ],
-  );
+  Widget inputFile({label, obscureText = false, controller}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          label,
+          style: TextStyle(
+              fontSize: 15, fontWeight: FontWeight.w400, color: Colors.black87),
+        ),
+        SizedBox(
+          height: 5,
+        ),
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          decoration: InputDecoration(
+              contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey[400]),
+              ),
+              border: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey[400]))),
+        ),
+        SizedBox(
+          height: 10,
+        )
+      ],
+    );
+  }
 }
